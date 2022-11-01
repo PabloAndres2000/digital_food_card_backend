@@ -1,0 +1,1 @@
+# Intelligently-Extract-Text-Data-from-Document-with-OCR-NER
