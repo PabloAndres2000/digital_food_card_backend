@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.db
+
+# Entorno virtual
+env/
+venv/
+.venv/
+
+# Archivos de configuración de IDE
+.idea/
+.vscode/
+*.sublime-workspace
+
+# Archivos de registro
+*.log
+
+# Archivos de Docker
+*.env
+*.dockerignore
+
+# Archivos de instalación
+*.egg-info/
+dist/
+build/

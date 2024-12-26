@@ -1,0 +1,82 @@
+services:
+  authentication_db:
+    container_name: authentication_db
+    image: postgres:13
+    env_file:
+      - ./authentication/envs/local.env
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: authentication
+    volumes:
+      - accounting_management_data:/var/lib/postgresql/data
+    networks:
+      - monorepo-network
+    healthcheck:
+      test: ['CMD', 'pg_isready', '-U', 'postgres', '-d', 'authentication_db']
+      interval: 10s
+      retries: 5
+      start_period: 10s
+      timeout: 5s
+    ports:
+      - '5432:5432'
+
+  authentication:
+    container_name: authentication
+    build:
+      context: ./authentication
+      dockerfile: .docker/Dockerfile
+    env_file:
+      - ./authentication/envs/local.env
+    environment:
+      - ENV=local
+      - DEBUG=${DEBUG}
+      - FLASK_ENV=${FLASK_ENV}
+    ports:
+      - '8000:8000'
+    networks:
+      - monorepo-network
+    depends_on:
+      - authentication_db
+      - rabbitmq
+    volumes:
+      - ./authentication:/app
+      - ./authentication/envs:/app/envs
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    ports:
+      - '5672:5672'
+      - '15672:15672'
+    networks:
+      - monorepo-network
+    healthcheck:
+      test: ['CMD', 'rabbitmq-diagnostics', 'ping']
+      interval: 10s
+      retries: 5
+      start_period: 10s
+      timeout: 10s
+
+  client_gateway:
+    build:
+      context: ./client_gateway
+      dockerfile: .docker/Dockerfile
+    env_file:
+      - ./client_gateway/envs/local.env
+    environment:
+      - RABBITMQ_HOST=${RABBITMQ_HOST}
+      - RABBITMQ_USER=${RABBITMQ_USER}
+      - RABBITMQ_PASS=${RABBITMQ_PASS}
+      - DEBUG=${DEBUG}
+    ports:
+      - '8003:8000'
+    networks:
+      - monorepo-network
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    volumes:
+      - ./client_gateway:/app
